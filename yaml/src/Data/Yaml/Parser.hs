@@ -37,12 +37,12 @@ instance Applicative YamlParser where
     pure = YamlParser . const . Right
     (<*>) = ap
 instance Alternative YamlParser where
-    empty = fail "empty"
+    empty = error "empty"
     (<|>) = mplus
 instance Semigroup (YamlParser a) where
     (<>) = mplus
 instance Monoid (YamlParser a) where
-    mempty = fail "mempty"
+    mempty = error "mempty"
 #if !MIN_VERSION_base(4,11,0)
     mappend = (<>)
 #endif
@@ -52,9 +52,9 @@ instance Monad YamlParser where
         case f am of
             Left t -> Left t
             Right x -> unYamlParser (g x) am
-    fail = YamlParser . const . Left . pack
+    -- fail = YamlParser . const . Left . pack
 instance MonadPlus YamlParser where
-    mzero = fail "mzero"
+    mzero = error "mzero"
     mplus a b = YamlParser $ \am ->
         case unYamlParser a am of
             Left _ -> unYamlParser b am
@@ -67,7 +67,7 @@ withAnchor :: AnchorName -> Text -> (YamlValue -> YamlParser a) -> YamlParser a
 withAnchor name expected f = do
     mv <- lookupAnchor name
     case mv of
-        Nothing -> fail $ unpack expected ++ ": unknown alias " ++ name
+        Nothing -> error $ unpack expected ++ ": unknown alias " ++ name
         Just v -> f v
 
 withMapping :: Text -> ([(Text, YamlValue)] -> YamlParser a) -> YamlValue -> YamlParser a
@@ -87,7 +87,7 @@ withText expected _ v = typeMismatch expected v
 
 typeMismatch :: Text -> YamlValue -> YamlParser a
 typeMismatch expected v =
-    fail $ concat
+    error $ concat
         [ "Expected "
         , unpack expected
         , ", but got: "
@@ -115,7 +115,7 @@ instance FromYaml Int where
         go t =
             case signed decimal t of
                 Right (i, "") -> return i
-                _ -> fail $ "Invalid Int: " ++ unpack t
+                _ -> error $ "Invalid Int: " ++ unpack t
 
 data YamlValue
     = Mapping [(Text, YamlValue)] Anchor
@@ -137,7 +137,7 @@ parseRawDoc (RawDoc val am) =
 (.:) :: FromYaml a => [(Text, YamlValue)] -> Text -> YamlParser a
 o .: k =
     case lookup k o of
-        Nothing -> fail $ "Key not found: " ++ unpack k
+        Nothing -> error $ "Key not found: " ++ unpack k
         Just v -> fromYaml v
 
 data YamlParseException

@@ -297,4 +297,4 @@ array :: [Value] -> Value
 array = Array . V.fromList
 
 parseMonad :: Monad m => (a -> Parser b) -> a -> m b
-parseMonad p = either fail return . parseEither p
+parseMonad p = either error return . parseEither p
